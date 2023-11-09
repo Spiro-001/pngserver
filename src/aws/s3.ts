@@ -16,13 +16,16 @@ const s3 = new S3Client({
   },
 });
 
-export const uploadSPhotoToS3 = async (photo: File, key: string) => {
+export const uploadSPhotoToS3 = async (
+  photo: Express.Multer.File,
+  key: string
+) => {
   try {
     const putCommand = new PutObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET_NAME ?? "ENV_VAR_NOT_FOUND",
       Key: key,
-      ContentType: photo.type,
-      Body: photo,
+      ContentType: photo.mimetype,
+      Body: photo.buffer,
     });
 
     const response = await s3.send(putCommand);
