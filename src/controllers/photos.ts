@@ -11,7 +11,7 @@ export const uploadPhoto = async (
   res: express.Response
 ) => {
   try {
-    const { title, description, date } = req.body;
+    const { title, description, date, rotate } = req.body;
     const image = req.file;
     const exifLoader = ExifReader.load(image.buffer);
 
@@ -85,34 +85,37 @@ export const uploadPhoto = async (
 
     // GPS DATA
     const gps: Record<string, any> = {};
-    gps["1"] = exifLoader["GPSLatitudeRef"].description[0]; // GPSLatitudeRef
-    gps["2"] = exifLoader["GPSLatitude"].value; // GPSLatitude
-    gps["3"] = exifLoader["GPSLongitudeRef"].description[0]; // GPSLongitudeRef
-    gps["4"] = exifLoader["GPSLongitude"].value; // GPSLongitude
-    gps["5"] = exifLoader["GPSAltitudeRef"].value; // GPSAltitudeRef
-    gps["6"] = exifLoader["GPSAltitude"].value; // GPSAltitude
-    gps["7"] = exifLoader["GPSTimeStamp"].value; // GPSTimeStamp
-    gps["12"] = exifLoader["GPSSpeedRef"].description; // GPSSpeedRef
-    gps["13"] = exifLoader["GPSSpeed"].value; // GPSSpeed
-    gps["16"] = exifLoader["GPSImgDirectionRef"].description; // GPSImgDirectionRef
-    gps["17"] = exifLoader["GPSImgDirection"].value; // GPSImgDirection
-    gps["23"] = exifLoader["GPSDestBearingRef"].description; // GPSDestBearingRef
-    gps["24"] = exifLoader["GPSDestBearing"].value; // GPSDestBearing
-    gps["29"] = exifLoader["GPSDateStamp"].description; // GPSDateStamp
-    gps["31"] = exifLoader["GPSHPositioningError"].value; // GPSHPositioningError
+    if (load.GPS) {
+      gps["1"] = exifLoader["GPSLatitudeRef"]?.description[0] ?? ""; // GPSLatitudeRef
+      gps["2"] = exifLoader["GPSLatitude"]?.value ?? [0]; // GPSLatitude
+      gps["3"] = exifLoader["GPSLongitudeRef"]?.description[0] ?? ""; // GPSLongitudeRef
+      gps["4"] = exifLoader["GPSLongitude"]?.value ?? [0]; // GPSLongitude
+      gps["5"] = exifLoader["GPSAltitudeRef"]?.value ?? [0]; // GPSAltitudeRef
+      gps["6"] = exifLoader["GPSAltitude"]?.value ?? [0]; // GPSAltitude
+      gps["7"] = exifLoader["GPSTimeStamp"]?.value ?? [0]; // GPSTimeStamp
+      gps["12"] = exifLoader["GPSSpeedRef"]?.description ?? ""; // GPSSpeedRef
+      gps["13"] = exifLoader["GPSSpeed"]?.value ?? [0]; // GPSSpeed
+      gps["16"] = exifLoader["GPSImgDirectionRef"]?.description ?? ""; // GPSImgDirectionRef
+      gps["17"] = exifLoader["GPSImgDirection"]?.value ?? [0]; // GPSImgDirection
+      gps["23"] = exifLoader["GPSDestBearingRef"]?.description ?? ""; // GPSDestBearingRef
+      gps["24"] = exifLoader["GPSDestBearing"]?.value ?? [0]; // GPSDestBearing
+      gps["29"] = exifLoader["GPSDateStamp"]?.description ?? ""; // GPSDateStamp
+      gps["31"] = exifLoader["GPSHPositioningError"]?.value ?? [0]; // GPSHPositioningError
+    }
 
     // INTEROP DATA
     const interop: Record<string, any> = {};
-    const interopIFD: Record<string, number> = { ...TagValues.InteropIFD };
-
     load["0th"] = zeroth;
     load["Exif"] = exif;
     load["GPS"] = gps;
     load["Interop"] = interop;
-    load["thumbnail"] = exifLoader.Thumbnail?.base64 ?? "";
+    load["thumbnail"] = load.thumbnail ?? exifLoader.Thumbnail?.base64 ?? "";
+
+    console.log(load);
 
     // Modify orginal date
-    load["Exif"][TagValues.ExifIFD.DateTimeOriginal] = date;
+    if (date) load["Exif"][TagValues.ExifIFD.DateTimeOriginal] = date;
+    if (rotate) load["0th"][TagValues.ImageIFD.Orientation] = rotate; // 1: rotate(0deg), 3: rotate(180deg), 6: rotate(90deg), 8: rotate(270deg)
 
     const exifStr = piexif.dump(load);
     const inserted = piexif.insert(exifStr, binaryData);
@@ -125,12 +128,17 @@ export const uploadPhoto = async (
       buffer: newJpegBuffer,
       size: image.size,
     } as Express.Multer.File;
-    const photo = await uploadSPhotoToS3(newJpeg, title ?? image.filename);
-    const signedPhoto = await getSPhotoFromS3(title ?? image.filename);
+
+    console.log(load);
+
+    const EXIFnewJPEG = ExifReader.load(newJpeg.buffer);
+    const photo = await uploadSPhotoToS3(newJpeg, title ?? image.originalname);
+    const signedPhoto = await getSPhotoFromS3(title ?? image.originalname);
 
     return res.status(200).json({
       message: "File uploaded successfully!",
       signedUrl: signedPhoto,
+      $EXIF: EXIFnewJPEG,
     });
   } catch (error) {
     console.log(error);
