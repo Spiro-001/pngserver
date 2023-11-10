@@ -2,6 +2,7 @@ import piexif, { IExif, IExifElement, TagValues } from "piexif-ts";
 import { log } from "./logger.js";
 import ExifReader from "exifreader";
 import convert from "heic-convert";
+import { pngToJpeg } from "./pngToJpeg.js";
 
 export const processEXIF = async (
   image: Express.Multer.File,
@@ -14,8 +15,6 @@ export const processEXIF = async (
 ) => {
   const { title, description, date, rotate } = photoData;
   const exifLoader = ExifReader.load(image.buffer);
-  const binaryData = Buffer.from(image.buffer).toString("binary");
-  const load = piexif.load(binaryData);
 
   if (image.mimetype === "image/heic") {
     log(
@@ -37,20 +36,38 @@ export const processEXIF = async (
     log("Successfully converted to JPEG!", ["green"], ["bold"]);
   }
 
+  if (image.mimetype === "image/png") {
+    log(
+      "Detected PNG file type! Converting to JPEG, this may take a couple minutes...",
+      ["yellow"],
+      ["bold"]
+    );
+
+    const ptjBuffer = pngToJpeg({ quality: 100 })(image.buffer);
+    const outputBuffer = Buffer.from(ptjBuffer);
+
+    image.buffer = outputBuffer;
+    image.mimetype = "image/jpeg";
+
+    log("Successfully converted to JPEG!", ["green"], ["bold"]);
+  }
+
+  const binaryData = Buffer.from(image.buffer).toString("binary");
+  const load = piexif.load(binaryData);
+
   // 0th DATA
   const zeroth: Record<string, any> = {};
-
   if (exifLoader["Make"]?.description)
     zeroth["271"] = exifLoader["Make"].description; // Make
   if (exifLoader["Model"]?.description)
     zeroth["272"] = exifLoader["Model"].description; // Model
-  if (exifLoader["Orientation"].value)
+  if (exifLoader["Orientation"]?.value)
     zeroth["274"] = exifLoader["Orientation"].value; // Orientation
-  if (exifLoader["XResolution"].value)
+  if (exifLoader["XResolution"]?.value)
     zeroth["282"] = exifLoader["XResolution"].value; // XResolution
-  if (exifLoader["YResolution"].value)
+  if (exifLoader["YResolution"]?.value)
     zeroth["283"] = exifLoader["YResolution"].value; // YResolution
-  if (exifLoader["ResolutionUnit"].value)
+  if (exifLoader["ResolutionUnit"]?.value)
     zeroth["296"] = exifLoader["ResolutionUnit"].value; // ResolutionUnit
   if (exifLoader["Software"]?.description)
     zeroth["305"] = exifLoader["Software"].description; // Software
@@ -58,9 +75,9 @@ export const processEXIF = async (
     zeroth["306"] = exifLoader["DateTime"].description; // DateTime
   if (exifLoader["HostComputer"]?.description)
     zeroth["316"] = exifLoader["HostComputer"].description; // HostComputer
-  if (exifLoader["ExposureTime"].value)
+  if (exifLoader["ExposureTime"]?.value)
     zeroth["33434"] = exifLoader["ExposureTime"].value; // ExposureTime
-  if (exifLoader["SensingMethod"].value)
+  if (exifLoader["SensingMethod"]?.value)
     zeroth["37399"] = exifLoader["SensingMethod"].value; // SensingMethod
 
   // EXIF DATA
