@@ -193,8 +193,6 @@ export const processEXIF = async (
   load["Interop"] = interop;
   load["thumbnail"] = load.thumbnail ?? exifLoader.Thumbnail?.base64 ?? "";
 
-  console.log(load);
-
   // Modify orginal date
   if (date) load["Exif"][TagValues.ExifIFD.DateTimeOriginal] = date;
   if (rotate) load["0th"][TagValues.ImageIFD.Orientation] = rotate; // 1: rotate(0deg), 3: rotate(180deg), 6: rotate(90deg), 8: rotate(270deg)

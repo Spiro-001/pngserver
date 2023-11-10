@@ -1,8 +1,6 @@
 import express from "express";
-import convert from "heic-convert";
 import ExifReader from "exifreader";
 import { getSPhotoFromS3, uploadSPhotoToS3 } from "../aws/s3.js";
-import { log } from "../utils/logger.js";
 import { processEXIF } from "../utils/imageExifProcess.js";
 
 export const uploadPhoto = async (
@@ -20,8 +18,17 @@ export const uploadPhoto = async (
     });
 
     const EXIFnewJPEG = ExifReader.load(newJpeg.buffer);
-    const photo = await uploadSPhotoToS3(newJpeg, title ?? image.originalname);
-    const signedPhoto = await getSPhotoFromS3(title ?? image.originalname);
+
+    const photoID = EXIFnewJPEG.DateTimeOriginal.description.split(" ");
+    photoID[0].replaceAll(":", "-");
+    const photoTitle = title ?? image.originalname;
+    const photoKey = photoTitle.slice(0, photoTitle.indexOf("."));
+
+    const photo = await uploadSPhotoToS3(
+      newJpeg,
+      photoKey + "T" + photoID.join(" ") + ".jpg"
+    );
+    const signedPhoto = await getSPhotoFromS3(photoKey);
 
     return res.status(200).json({
       message: "File uploaded successfully!",
@@ -32,4 +39,12 @@ export const uploadPhoto = async (
     console.log(error);
     return res.sendStatus(400);
   }
+};
+
+export const deletePhoto = async (
+  req: express.Request,
+  res: express.Response
+) => {
+  try {
+  } catch (error) {}
 };
