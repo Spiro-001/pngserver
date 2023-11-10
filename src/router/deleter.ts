@@ -1,15 +1,12 @@
 import { deletePhoto, uploadPhoto } from "../controllers/photos.js";
 import { isAuthenticated, isOwner } from "../middlewares/index.js";
 import express from "express";
-import multer from "multer";
-
-const upload = multer();
 
 export default (router: express.Router) => {
-  router.post(
-    "/upload/photo",
+  router.delete(
+    "/delete/photo/:id/:key",
     isAuthenticated,
-    upload.single("image"),
-    uploadPhoto
+    isOwner,
+    deletePhoto
   );
 };
