@@ -13,6 +13,7 @@ const app = express();
 app.use(
   cors({
     credentials: true,
+    origin: "http://localhost:3000",
   })
 );
 app.use(compression());
@@ -26,9 +27,9 @@ app.use(bodyParser.json());
 
 const server = http.createServer(app);
 
-server.listen(8080, () => {
+server.listen(parseInt(process.env.SERVER_PORT), () => {
   log(
-    "Server running on http://localhost:8080/",
+    `Server running on http://${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`,
     ["bgWhite"],
     ["italic", "bold"]
   );

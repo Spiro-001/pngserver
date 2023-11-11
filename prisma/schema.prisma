@@ -22,4 +22,26 @@ model User {
   email          String @unique
   /// [AuthenticationType]
   authentication Json
+
+  Albums Album[]
+  Photo  Photo[]
+}
+
+model Album {
+  id        String  @id @unique @default(uuid())
+  name      String
+  creatorId String
+  photos    Photo[]
+
+  Creator User @relation(fields: [creatorId], references: [id])
+}
+
+model Photo {
+  id         String  @id @unique @default(uuid())
+  uploaderId String
+  key        String  @unique
+  albumId    String?
+
+  Uploader User   @relation(fields: [uploaderId], references: [id])
+  Album    Album? @relation(fields: [albumId], references: [id])
 }

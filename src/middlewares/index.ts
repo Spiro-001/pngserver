@@ -8,7 +8,7 @@ export const isOwner = async (
   next: express.NextFunction
 ) => {
   try {
-    const { id } = req.params;
+    const { id } = req.body;
     const currentUserId = lodash.get(req, "identity.id") as string;
 
     if (!currentUserId) {
@@ -37,7 +37,6 @@ export const isAuthenticated = async (
 ) => {
   try {
     const sessionToken = req.cookies["CONNECTED2U_AUTH_TOKEN"];
-
     if (!sessionToken) {
       return res
         .status(403)

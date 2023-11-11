@@ -8,6 +8,7 @@ import {
 } from "../aws/s3.js";
 import { processEXIF } from "../utils/imageExifProcess.js";
 import { getUserBySessionToken } from "../../prisma/users.js";
+import { getPhotosByAlbumId, getPhotosByUserId } from "../../prisma/photos.js";
 
 export const uploadPhoto = async (
   req: express.Request,
@@ -80,6 +81,67 @@ export const deletePhoto = async (
     return res.status(200).json({
       message: "File deleted successfully!",
     });
+  } catch (error) {
+    console.log(error);
+    return res.sendStatus(400);
+  }
+};
+
+export const getPhoto = async (req: express.Request, res: express.Response) => {
+  try {
+    const { id, type, key } = req.params;
+    const currentUserId = lodash.get(req, "identity.id") as string;
+    if (!currentUserId) {
+      return res
+        .status(403)
+        .json({ message: "Could not resolve your identity!" });
+    }
+    const photoKey = currentUserId + "/" + key + ".jpg";
+
+    switch (type) {
+      case "year":
+        break;
+      case "album":
+        break;
+      case "single":
+        const signedPhoto = await getSPhotoFromS3(photoKey);
+        return res.status(200).json({
+          key,
+          signedPhoto,
+        });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.sendStatus(400);
+  }
+};
+
+export const getPhotosById = async (
+  req: express.Request,
+  res: express.Response
+) => {
+  try {
+    const { type } = req.params;
+    const { id } = req.body;
+
+    console.log(id);
+
+    if (!id) {
+      res
+        .status(400)
+        .json({
+          message: "Failed to get id from client!",
+        })
+        .end();
+    }
+    if (type === "albumId") {
+      const photos = await getPhotosByAlbumId(id);
+      return res.status(200).json(photos);
+    }
+    if (type === "userId") {
+      const photos = await getPhotosByUserId(id);
+      return res.status(200).json(photos);
+    }
   } catch (error) {
     console.log(error);
     return res.sendStatus(400);

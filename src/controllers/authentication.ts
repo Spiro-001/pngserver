@@ -2,6 +2,7 @@ import express from "express";
 import {
   createUser,
   getUserByEmail,
+  getUserById,
   updateUserById,
 } from "../../prisma/users.js";
 import { authentication, rand } from "../utils/auth.js";
@@ -33,7 +34,8 @@ export const login = async (req: express.Request, res: express.Response) => {
     user.authentication.sessionToken = authentication(salt, user.id.toString());
     await updateUserById(user.id, user);
     res.cookie("CONNECTED2U_AUTH_TOKEN", user.authentication.sessionToken, {
-      domain: "localhost",
+      domain: process.env.SERVER_HOST,
+      path: "/",
     });
     return res.status(200).json(user).end();
   } catch (error) {
@@ -72,6 +74,60 @@ export const register = async (req: express.Request, res: express.Response) => {
     });
 
     return res.status(200).json(newUser).end();
+  } catch (error) {
+    console.log(error);
+    return res.sendStatus(400);
+  }
+};
+
+export const validate = async (req: express.Request, res: express.Response) => {
+  try {
+    const { id, sessionToken } = req.body;
+    if (!sessionToken) {
+      return res
+        .status(200)
+        .json({
+          validate: false,
+        })
+        .end();
+    }
+
+    if (!id) {
+      return res
+        .status(400)
+        .json({
+          id: !id ? "Invalid identifcation number!" : "",
+        })
+        .end();
+    }
+    const existingUser = await getUserById(id, true);
+    if (!existingUser) {
+      return res
+        .status(400)
+        .json({
+          id: "Unable to find user with that id!",
+        })
+        .end();
+    }
+    if (sessionToken !== existingUser.authentication.sessionToken) {
+      res.cookie("CONNECTED2U_AUTH_TOKEN", "", {
+        domain: process.env.SERVER_HOST,
+        path: "/",
+      });
+      return res
+        .status(200)
+        .json({
+          validate: false,
+        })
+        .end();
+    }
+
+    return res
+      .status(200)
+      .json({
+        validate: existingUser,
+      })
+      .end();
   } catch (error) {
     console.log(error);
     return res.sendStatus(400);

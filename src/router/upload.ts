@@ -1,4 +1,4 @@
-import { deletePhoto, uploadPhoto } from "../controllers/photos.js";
+import { uploadPhoto } from "../controllers/photos.js";
 import { isAuthenticated, isOwner } from "../middlewares/index.js";
 import express from "express";
 import multer from "multer";
