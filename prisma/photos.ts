@@ -10,7 +10,7 @@ export const getPhoto = async (id: string) => {
 
 export const getPhotosByUserId = async (
   uploaderId: string,
-  take: number = 10,
+  take: number = 50,
   skip: number = 0
 ) => {
   return await prisma.photo.findMany({
@@ -30,12 +30,15 @@ export const getPhotosByUserId = async (
 
 export const getPhotosByAlbumId = async (
   albumId: string,
-  take: number = 10,
+  take: number = 50,
   skip: number = 0
 ) => {
   return await prisma.photo.findMany({
     where: {
       albumId,
+    },
+    orderBy: {
+      originalDate: "asc",
     },
     take,
     skip,
@@ -46,4 +49,18 @@ export const getPhotosByAlbumId = async (
       Album: true,
     },
   });
+};
+
+export const createPhoto = async (id: string, key: string, date: string) => {
+  try {
+    return await prisma.photo.create({
+      data: {
+        uploaderId: id,
+        key,
+        originalDate: date,
+      },
+    });
+  } catch (error) {
+    return new Error(error);
+  }
 };

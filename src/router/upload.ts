@@ -12,4 +12,11 @@ export default (router: express.Router) => {
     upload.single("image"),
     uploadPhoto
   );
+
+  router.post(
+    "/upload/photos",
+    isAuthenticated,
+    upload.array("images"),
+    uploadPhoto
+  );
 };

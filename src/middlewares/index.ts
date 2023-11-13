@@ -8,7 +8,7 @@ export const isOwner = async (
   next: express.NextFunction
 ) => {
   try {
-    const { id } = req.body;
+    const { id } = req.params;
     const currentUserId = lodash.get(req, "identity.id") as string;
 
     if (!currentUserId) {

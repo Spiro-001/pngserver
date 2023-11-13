@@ -1,14 +1,20 @@
 import express from "express";
-import ExifReader from "exifreader";
 import lodash from "lodash";
-import {
-  deleteSPhotoFromS3,
-  getSPhotoFromS3,
-  uploadSPhotoToS3,
-} from "../aws/s3.js";
-import { processEXIF } from "../utils/imageExifProcess.js";
-import { getUserBySessionToken } from "../../prisma/users.js";
+import { deleteSPhotoFromS3, getSPhotoFromS3 } from "../aws/s3.js";
 import { getPhotosByAlbumId, getPhotosByUserId } from "../../prisma/photos.js";
+import { uploadImage } from "../utils/uploadImage.js";
+import { log } from "../utils/logger.js";
+
+type ImageResultType = {
+  message: string;
+  id?: string;
+  signedUrl?: {
+    m: string;
+    t: string;
+  };
+  $EXIF?: ExifReader.Tags;
+  key?: string;
+};
 
 export const uploadPhoto = async (
   req: express.Request,
@@ -21,42 +27,30 @@ export const uploadPhoto = async (
         .status(403)
         .json({ message: "Could not resolve your identity!" });
     }
-
-    const { title, description, date, rotate } = req.body;
-    const image = req.file;
-    if (!image) {
-      return res.status(400).json({ message: "File was not attached!" });
+    // Multiple Files
+    if (req.files) {
+      const result: ImageResultType[] = [];
+      const files = req.files as Express.Multer.File[];
+      let idx = 1;
+      for (const file of files) {
+        const p = await uploadImage(
+          req,
+          res,
+          currentUserId,
+          file,
+          idx,
+          files.length
+        );
+        result.push(p);
+        idx++;
+      }
+      log("Upload complete!", ["greenBright"], ["bold"]);
+      return res.status(200).json({ result });
+    } else {
+      const result = await uploadImage(req, res, currentUserId);
+      log("Upload complete!", ["greenBright"], ["bold"]);
+      return res.status(200).json(result);
     }
-    const newJpeg = await processEXIF(image, {
-      title,
-      description,
-      date,
-      rotate,
-    });
-
-    const EXIFnewJPEG = ExifReader.load(newJpeg.buffer);
-
-    const photoID = EXIFnewJPEG.DateTimeOriginal.description.split(" ");
-    photoID[0].replaceAll(":", "-");
-    const photoTitle = title ?? image.originalname;
-    const photoEXTRemoval = photoTitle.slice(0, photoTitle.indexOf("."));
-    const photoKey =
-      currentUserId +
-      "/" +
-      photoEXTRemoval +
-      "TZ" +
-      photoID.join("TTZ") +
-      ".jpg";
-
-    const photo = await uploadSPhotoToS3(newJpeg, photoKey);
-    const signedPhoto = await getSPhotoFromS3(photoKey);
-
-    return res.status(200).json({
-      message: "File uploaded successfully!",
-      id: photoKey,
-      signedUrl: signedPhoto,
-      $EXIF: EXIFnewJPEG,
-    });
   } catch (error) {
     console.log(error);
     return res.sendStatus(400);
@@ -121,13 +115,10 @@ export const getPhotosById = async (
   res: express.Response
 ) => {
   try {
-    const { type } = req.params;
-    const { id } = req.body;
-
-    console.log(id);
+    const { id, type } = req.params;
 
     if (!id) {
-      res
+      return res
         .status(400)
         .json({
           message: "Failed to get id from client!",

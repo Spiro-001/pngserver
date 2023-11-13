@@ -2,7 +2,7 @@ import piexif, { IExif, IExifElement, TagValues } from "piexif-ts";
 import { log } from "./logger.js";
 import ExifReader from "exifreader";
 import convert from "heic-convert";
-import { pngToJpeg } from "./pngToJpeg.js";
+import sharp from "sharp";
 
 export const processEXIF = async (
   image: Express.Multer.File,
@@ -43,7 +43,13 @@ export const processEXIF = async (
       ["bold"]
     );
 
-    const ptjBuffer = pngToJpeg({ quality: 100 })(image.buffer);
+    const ptjBuffer = await sharp(image.buffer)
+      .toFormat("jpeg")
+      .jpeg({
+        quality: 100,
+        force: true,
+      })
+      .toBuffer();
     const outputBuffer = Buffer.from(ptjBuffer);
 
     image.buffer = outputBuffer;
@@ -63,10 +69,20 @@ export const processEXIF = async (
     zeroth["272"] = exifLoader["Model"].description; // Model
   if (exifLoader["Orientation"]?.value)
     zeroth["274"] = exifLoader["Orientation"].value; // Orientation
-  if (exifLoader["XResolution"]?.value)
-    zeroth["282"] = exifLoader["XResolution"].value; // XResolution
-  if (exifLoader["YResolution"]?.value)
-    zeroth["283"] = exifLoader["YResolution"].value; // YResolution
+  if (exifLoader["XResolution"]?.value) {
+    if (typeof exifLoader["XResolution"].value === "number") {
+      zeroth["282"] = [exifLoader["XResolution"].value, 1]; // XResolution
+    } else {
+      zeroth["282"] = exifLoader["XResolution"].value; // XResolution
+    }
+  }
+  if (exifLoader["YResolution"]?.value) {
+    if (typeof exifLoader["YResolution"].value === "number") {
+      zeroth["282"] = [exifLoader["YResolution"].value, 1]; // YResolution
+    } else {
+      zeroth["282"] = exifLoader["YResolution"].value; // YResolution
+    }
+  }
   if (exifLoader["ResolutionUnit"]?.value)
     zeroth["296"] = exifLoader["ResolutionUnit"].value; // ResolutionUnit
   if (exifLoader["Software"]?.description)
@@ -126,7 +142,10 @@ export const processEXIF = async (
     exif["41729"] = exifLoader["SceneType"].description; // SceneType
   if (exifLoader["ExposureMode"]?.value)
     exif["41986"] = exifLoader["ExposureMode"].value; // ExposureMode
-  if (exifLoader["WhiteBalance"]?.value)
+  if (
+    exifLoader["WhiteBalance"]?.value &&
+    typeof exifLoader["WhiteBalance"]?.value !== "string"
+  )
     exif["41987"] = exifLoader["WhiteBalance"].value; // WhiteBalance
   if (exifLoader["FocalLengthIn35mmFilm"]?.value)
     exif["41989"] = exifLoader["FocalLengthIn35mmFilm"].value; // FocalLengthIn35mmFilm
@@ -160,25 +179,25 @@ export const processEXIF = async (
   if (exifLoader["GPSTimeStamp"]?.value) {
     gps["7"] = exifLoader["GPSTimeStamp"].value; // GPSTimeStamp
   }
-  if (exifLoader["GPSSpeedRef"]?.value) {
+  if (exifLoader["GPSSpeedRef"]?.description) {
     gps["12"] = exifLoader["GPSSpeedRef"].description; // GPSSpeedRef
   }
   if (exifLoader["GPSSpeed"]?.value) {
     gps["13"] = exifLoader["GPSSpeed"].value; // GPSSpeed
   }
-  if (exifLoader["GPSImgDirectionRef"]?.value) {
+  if (exifLoader["GPSImgDirectionRef"]?.description) {
     gps["16"] = exifLoader["GPSImgDirectionRef"].description; // GPSImgDirectionRef
   }
   if (exifLoader["GPSImgDirection"]?.value) {
     gps["17"] = exifLoader["GPSImgDirection"].value; // GPSImgDirection
   }
-  if (exifLoader["GPSDestBearingRef"]?.value) {
+  if (exifLoader["GPSDestBearingRef"]?.description) {
     gps["23"] = exifLoader["GPSDestBearingRef"].description; // GPSDestBearingRef
   }
   if (exifLoader["GPSDestBearing"]?.value) {
     gps["24"] = exifLoader["GPSDestBearing"].value; // GPSDestBearing
   }
-  if (exifLoader["GPSDateStamp"]?.value) {
+  if (exifLoader["GPSDateStamp"]?.description) {
     gps["29"] = exifLoader["GPSDateStamp"].description; // GPSDateStamp
   }
   if (exifLoader["GPSHPositioningError"]?.value) {
@@ -208,5 +227,6 @@ export const processEXIF = async (
     buffer: newJpegBuffer,
     size: image.size,
   } as Express.Multer.File;
+
   return newJpeg;
 };
