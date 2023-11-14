@@ -98,10 +98,14 @@ export const getPhoto = async (req: express.Request, res: express.Response) => {
       case "album":
         break;
       case "single":
+        log(`Getting ${photoKey} from S3`, ["yellowBright"], ["italic"]);
         const signedPhoto = await getSPhotoFromS3(photoKey);
+        const photoArrayBuffer = await (await fetch(signedPhoto)).arrayBuffer();
+        const photoBuffer = Buffer.from(photoArrayBuffer);
         return res.status(200).json({
           key,
           signedPhoto,
+          buffer: photoBuffer,
         });
     }
   } catch (error) {

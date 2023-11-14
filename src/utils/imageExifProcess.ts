@@ -23,10 +23,15 @@ export const processEXIF = async (
       ["bold"]
     );
 
-    const HEICtoJPEGBuffer = await convert({
+    let HEICtoJPEGBuffer = await convert({
       buffer: image.buffer,
       format: "JPEG",
     });
+
+    console.log(exifLoader.Orientation);
+    if (exifLoader.Orientation.value === 6) {
+      HEICtoJPEGBuffer = await sharp(HEICtoJPEGBuffer).rotate(-90).toBuffer();
+    }
 
     const outputBuffer = Buffer.from(HEICtoJPEGBuffer);
 
@@ -44,6 +49,7 @@ export const processEXIF = async (
     );
 
     const ptjBuffer = await sharp(image.buffer)
+      .withMetadata()
       .toFormat("jpeg")
       .jpeg({
         quality: 100,
@@ -60,6 +66,8 @@ export const processEXIF = async (
 
   const binaryData = Buffer.from(image.buffer).toString("binary");
   const load = piexif.load(binaryData);
+
+  console.log(load);
 
   // 0th DATA
   const zeroth: Record<string, any> = {};
