@@ -36,13 +36,15 @@ export const uploadImage = async (
   });
 
   log(
-    `${newJpeg.originalname} has been successfully uploaded! ${current} / ${max}`,
+    `${newJpeg.originalname} has been successfully uploaded! ${
+      current ?? 1
+    } / ${max ?? 1}`,
     ["blueBright"],
     ["bold"]
   );
 
   const thumbnail = await sharp(newJpeg.buffer)
-    .resize(200, 200)
+    .resize(300, 300)
     .withMetadata()
     .toBuffer();
   // Reuse image object, change the buffer to optimized image buffer
