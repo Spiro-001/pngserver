@@ -102,6 +102,7 @@ export const getPhoto = async (req: express.Request, res: express.Response) => {
         const signedPhoto = await getSPhotoFromS3(photoKey);
         const photoArrayBuffer = await (await fetch(signedPhoto)).arrayBuffer();
         const photoBuffer = Buffer.from(photoArrayBuffer);
+        log(`Retrieved ${photoKey} from S3`, ["greenBright"], ["italic"]);
         return res.status(200).json({
           key,
           signedPhoto,

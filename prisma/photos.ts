@@ -17,6 +17,9 @@ export const getPhotosByUserId = async (
     where: {
       uploaderId,
     },
+    orderBy: {
+      originalDate: "desc",
+    },
     take,
     skip,
     select: {
@@ -24,6 +27,7 @@ export const getPhotosByUserId = async (
       key: true,
       uploaderId: true,
       Album: true,
+      originalDate: true,
     },
   });
 };
@@ -38,7 +42,7 @@ export const getPhotosByAlbumId = async (
       albumId,
     },
     orderBy: {
-      originalDate: "asc",
+      originalDate: "desc",
     },
     take,
     skip,
@@ -47,6 +51,7 @@ export const getPhotosByAlbumId = async (
       key: true,
       uploaderId: true,
       Album: true,
+      originalDate: true,
     },
   });
 };

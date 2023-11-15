@@ -48,7 +48,7 @@ export const getSPhotoFromS3 = async (key: string) => {
       Key: key,
     });
     const response = await s3.send(objectExistCommand);
-    const url = await getSignedUrl(s3, getCommand, { expiresIn: 60 });
+    const url = await getSignedUrl(s3, getCommand, { expiresIn: 86400 });
     return url;
   } catch (error) {
     let message = "Unknown Error";

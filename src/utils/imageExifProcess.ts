@@ -28,7 +28,6 @@ export const processEXIF = async (
       format: "JPEG",
     });
 
-    console.log(exifLoader.Orientation);
     if (exifLoader.Orientation.value === 6) {
       HEICtoJPEGBuffer = await sharp(HEICtoJPEGBuffer).rotate(-90).toBuffer();
     }
