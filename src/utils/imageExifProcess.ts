@@ -16,7 +16,7 @@ export const processEXIF = async (
   const { title, description, date, rotate } = photoData;
   const exifLoader = ExifReader.load(image.buffer);
 
-  if (image.mimetype === "image/heic") {
+  if (image.mimetype === "image/heic" || image.mimetype === "image/HEIC") {
     log(
       "Detected HEIC file type! Converting to JPEG, this may take a couple minutes...",
       ["yellow"],
@@ -40,7 +40,7 @@ export const processEXIF = async (
     log("Successfully converted to JPEG!", ["green"], ["bold"]);
   }
 
-  if (image.mimetype === "image/png") {
+  if (image.mimetype === "image/png" || image.mimetype === "image/PNG") {
     log(
       "Detected PNG file type! Converting to JPEG, this may take a couple minutes...",
       ["yellow"],

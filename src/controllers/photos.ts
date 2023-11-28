@@ -106,7 +106,7 @@ export const getPhoto = async (req: express.Request, res: express.Response) => {
         return res.status(200).json({
           key,
           signedPhoto,
-          buffer: photoBuffer,
+          buffer: photoBuffer, // Moving to cloudfront
         });
     }
   } catch (error) {
