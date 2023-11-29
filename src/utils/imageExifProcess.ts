@@ -64,9 +64,7 @@ export const processEXIF = async (
   }
 
   const binaryData = Buffer.from(image.buffer).toString("binary");
-  const load = piexif.load(binaryData);
-
-  console.log(load);
+  const load = piexif.load(binaryData) ?? {};
 
   // 0th DATA
   const zeroth: Record<string, any> = {};

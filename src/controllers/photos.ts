@@ -4,6 +4,7 @@ import { deleteSPhotoFromS3, getSPhotoFromS3 } from "../aws/s3.js";
 import { getPhotosByAlbumId, getPhotosByUserId } from "../../prisma/photos.js";
 import { uploadImage } from "../utils/uploadImage.js";
 import { log } from "../utils/logger.js";
+import { prisma } from "../../prisma/prisma.js";
 
 type ImageResultType = {
   message: string;
@@ -91,7 +92,6 @@ export const getPhoto = async (req: express.Request, res: express.Response) => {
         .json({ message: "Could not resolve your identity!" });
     }
     const photoKey = currentUserId + "/" + key + ".jpg";
-
     switch (type) {
       case "year":
         break;
