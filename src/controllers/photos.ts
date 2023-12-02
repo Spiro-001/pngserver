@@ -48,9 +48,10 @@ export const uploadPhoto = async (
       log("Upload complete!", ["greenBright"], ["bold"]);
       return res.status(200).json({ result });
     } else {
-      const result = await uploadImage(req, res, currentUserId);
-      log("Upload complete!", ["greenBright"], ["bold"]);
-      return res.status(200).json(result);
+      uploadImage(req, res, currentUserId).then((result) => {
+        log("Upload complete!", ["greenBright"], ["bold"]);
+        return res.status(200).json(result);
+      });
     }
   } catch (error) {
     console.log(error);

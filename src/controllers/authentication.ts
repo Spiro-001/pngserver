@@ -94,7 +94,7 @@ export const validate = async (req: express.Request, res: express.Response) => {
 
     if (!id) {
       return res
-        .status(400)
+        .status(401)
         .json({
           id: !id ? "Invalid identifcation number!" : "",
         })
@@ -103,7 +103,7 @@ export const validate = async (req: express.Request, res: express.Response) => {
     const existingUser = await getUserById(id, true);
     if (!existingUser) {
       return res
-        .status(400)
+        .status(401)
         .json({
           id: "Unable to find user with that id!",
         })
